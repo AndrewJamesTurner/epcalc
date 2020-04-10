@@ -32,6 +32,50 @@
     return x
   }
 
+  function downloadRawFile(fileName, data){
+
+    var element = document.createElement('a');
+    element.setAttribute('href', data)
+    element.setAttribute('download', fileName);
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
+  }
+
+  function downloadTextFile(fileName, text) {
+    var textAsUri = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text)
+    downloadRawFile(fileName, textAsUri)
+  }
+
+  function downloadPlotData(P, timeSteps) {
+    
+    //    Dead   Hospital          Recovered        Infectious   Exposed
+    console.log(P.length)
+    console.log(timeSteps.length)
+
+    var csvString = "Time, Dead, Hospital, Recovered, Infectious, Exposed\n"
+
+    for(var sample = 0; sample < timeSteps.length; sample++) {
+
+      var time = timeSteps[sample]
+      var dead = P[sample][0]
+      var hospital = P[sample][1]
+      var recovered = P[sample][2]
+      var infectious = P[sample][3]
+      var exposed = P[sample][4]
+
+      csvString += "" + time + "," + dead + "," + hospital + "," + recovered + "," + infectious + "," + exposed + "," + "\n"
+    }
+
+    downloadTextFile("data.csv", csvString)
+
+  }
+
+
   var Integrators = {
     Euler    : [[1]],
     Midpoint : [[.5,.5],[0, 1]],
@@ -143,6 +187,7 @@
       var dR_Fatal  =  (1/D_death)*Fatal
 
       //      0   1   2   3      4        5          6       7        8          9
+      // console.log([dS, dE, dI, dMild, dSevere, dSevere_H, dFatal, dR_Mild, dR_Severe, dR_Fatal])
       return [dS, dE, dI, dMild, dSevere, dSevere_H, dFatal, dR_Mild, dR_Severe, dR_Fatal]
     }
 
@@ -152,12 +197,15 @@
     var P  = []
     var TI = []
     var Iters = []
+    var timeSteps = []
+
     while (steps--) { 
       if ((steps+1) % (sample_step) == 0) {
             //    Dead   Hospital          Recovered        Infectious   Exposed
         P.push([ N*v[9], N*(v[5]+v[6]),  N*(v[7] + v[8]), N*v[2],    N*v[1] ])
         Iters.push(v)
         TI.push(N*(1-v[0]))
+        timeSteps.push(t)
         // console.log((v[0] + v[1] + v[2] + v[3] + v[4] + v[5] + v[6] + v[7] + v[8] + v[9]))
         // console.log(v[0] , v[1] , v[2] , v[3] , v[4] , v[5] , v[6] , v[7] , v[8] , v[9])
       }
@@ -169,7 +217,8 @@
             "total": 1-v[0],
             "total_infected": TI,
             "Iters":Iters,
-            "dIters": f}
+            "dIters": f,
+            "timeSteps": timeSteps}
   }
 
   function max(P, checked) {
@@ -187,6 +236,7 @@
   $: dIters         = Sol["dIters"]
   $: Pmax           = max(P, checked)
   $: lock           = false
+  $: timeSteps      = Sol["timeSteps"].slice(0,100)
 
   var colors = [ "#386cb0", "#8da0cb", "#4daf4a", "#f0027f", "#fdc086"]
 
@@ -924,6 +974,30 @@
 
 </div>
 
+<!-- 
+<Chart bind:checked={checked}
+             bind:active={active}
+             y = {P} 
+             xmax = {Xmax} 
+             total_infected = {total_infected} 
+             deaths = {deaths} 
+             total = {total} 
+             timestep={timestep}
+             tmax={tmax}
+             N={N}
+             ymax={lock ? Plock: Pmax}
+             InterventionTime={InterventionTime}
+             colors={colors}
+             log={!log}/> -->
+
+<div style="height:100px;">
+  <div class="minorTitle">
+    <div style="margin: 0px 0px 5px 4px" class="minorTitleColumn">Download Plot Data</div>
+  </div>
+  <div class = "row">
+      <button on:click={() => downloadPlotData(P, timeSteps)}>Download</button>
+  </div>
+</div>
 
 <div style="height:220px;">
   <div class="minorTitle">
