@@ -53,11 +53,7 @@
 
   function downloadPlotData(P, timeSteps) {
     
-    //    Dead   Hospital          Recovered        Infectious   Exposed
-    console.log(P.length)
-    console.log(timeSteps.length)
-
-    var csvString = "Time, Dead, Hospital, Recovered, Infectious, Exposed\n"
+    var csvString = "Time, Dead, Hospital, Recovered, Infectious, Exposed, Recovering Mild, Recovering Severe at home, Recovering Severe in hospital, Recovering Fatal, Recovered Mild, Recovered Severe\n"
 
     for(var sample = 0; sample < timeSteps.length; sample++) {
 
@@ -67,8 +63,27 @@
       var recovered = P[sample][2]
       var infectious = P[sample][3]
       var exposed = P[sample][4]
+      var recoveringMild = P[sample][5]
+      var recoveringSevereHome = P[sample][6]
+      var recoveringSevereHospital = P[sample][7]
+      var recoveringFatal = P[sample][8]
+      var recoveredMild = P[sample][9]
+      var recoveredSever = P[sample][10]
 
-      csvString += "" + time + "," + dead + "," + hospital + "," + recovered + "," + infectious + "," + exposed + "," + "\n"
+      csvString += "" 
+        + time + "," 
+        + dead + "," 
+        + hospital + "," 
+        + recovered + "," 
+        + infectious 
+        + "," + exposed 
+        + "," + recoveringMild 
+        + "," + recoveringSevereHome 
+        + "," + recoveringSevereHospital 
+        + "," + recoveringFatal 
+        + "," + recoveredMild 
+        + "," + recoveredSever 
+        + "," + "\n"
     }
 
     downloadTextFile("data.csv", csvString)
@@ -187,7 +202,6 @@
       var dR_Fatal  =  (1/D_death)*Fatal
 
       //      0   1   2   3      4        5          6       7        8          9
-      // console.log([dS, dE, dI, dMild, dSevere, dSevere_H, dFatal, dR_Mild, dR_Severe, dR_Fatal])
       return [dS, dE, dI, dMild, dSevere, dSevere_H, dFatal, dR_Mild, dR_Severe, dR_Fatal]
     }
 
@@ -201,8 +215,20 @@
 
     while (steps--) { 
       if ((steps+1) % (sample_step) == 0) {
-            //    Dead   Hospital          Recovered        Infectious   Exposed
-        P.push([ N*v[9], N*(v[5]+v[6]),  N*(v[7] + v[8]), N*v[2],    N*v[1] ])
+        P.push([
+          N*v[9],             // Dead
+          N*(v[5]+v[6]),      // Hospital
+          N*(v[7] + v[8]),    // Recovered
+          N*v[2],             // Infectious
+          N*v[1],             // Exposed
+          N*v[3],             // Recovering Mild
+          N*v[4],             // Recovering Severe at home
+          N*v[5],             // Recovering Severe in hospital
+          N*v[6],             // Recovering Fatal
+          N*v[7],             // Recovered Mild
+          N*v[8],             // Recovered Severe
+        ])
+                
         Iters.push(v)
         TI.push(N*(1-v[0]))
         timeSteps.push(t)
@@ -224,6 +250,9 @@
   function max(P, checked) {
     return P.reduce((max, b) => Math.max(max, sum(b, checked) ), sum(P[0], checked) )
   }
+
+  // //      0   1   2   3      4        5          6       7        8          9
+  // return [dS, dE, dI, dMild, dSevere, dSevere_H, dFatal, dR_Mild, dR_Severe, dR_Fatal]
 
   $: Sol            = get_solution(dt, N, I0, R0, D_incbation, D_infectious, D_recovery_mild, D_hospital_lag, D_recovery_severe, D_death, P_SEVERE, CFR, InterventionTime, InterventionAmt, duration)
   $: P              = Sol["P"].slice(0,100)
